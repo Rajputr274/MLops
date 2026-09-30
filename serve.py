@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
-
-import mlflow
+import joblib
 import mlflow.sklearn
 import pandas as pd
 
@@ -11,15 +10,25 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 BASE_DIR = Path(__file__).resolve().parent
-TRACKING_URI = os.getenv("MLFLOW_TRACKING", "http://127.0.0.1:5000")
 
-# Ensure this model name and version/alias exist in MLflow server
-MODEL_URI = "models:/house-price-predictor/1"  # Or "models:/house-price-predictor@champion"
-
+# Features definition
 FEATURES = ["sqft", "bedrooms", "bathrooms", "age_years", "garage", "location_score"]
 
-mlflow.set_tracking_uri(TRACKING_URI)
-model = mlflow.sklearn.load_model(MODEL_URI)
+# Model path definition (Local file check)
+LOCAL_MODEL_PKL = BASE_DIR / "model.pkl"
+LOCAL_MLFLOW_MODEL_DIR = BASE_DIR / "model"
+
+MODEL_URI = "local_model"
+
+# Load model locally to avoid network blocking
+if LOCAL_MODEL_PKL.exists():
+    model = joblib.load(LOCAL_MODEL_PKL)
+elif LOCAL_MLFLOW_MODEL_DIR.exists():
+    model = mlflow.sklearn.load_model(str(LOCAL_MLFLOW_MODEL_DIR))
+else:
+    raise FileNotFoundError(
+        "No model file found! Ensure 'model.pkl' or 'model/' folder is copied in Docker container."
+    )
 
 app = FastAPI(title="House Price Predictor")
 
