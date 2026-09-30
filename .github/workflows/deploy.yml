@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      image_tag: ${{ steps.build-image.outputs.image_tag }}
+      image_tag: ${{ steps.set-output.outputs.image_tag }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -37,6 +37,7 @@ jobs:
             ${{ env.DOCKER_IMAGE }}:latest
 
       - name: Set Output Tag
+        id: set-output
         run: echo "image_tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
   deploy:
@@ -45,16 +46,20 @@ jobs:
     steps:
       - name: SSH into EC2 and Deploy
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_IMAGE
+          envs: DOCKER_IMAGE,IMAGE_TAG
           script: |
-            IMAGE_TAG="${{ needs.build.outputs.image_tag }}"
+            # Fallback agar IMAGE_TAG blank ho
+            IMAGE_TAG=${IMAGE_TAG:-latest}
+            
             echo "Deploying Image: $DOCKER_IMAGE:$IMAGE_TAG"
 
-            # 1. Pull the newly built image
+            # 1. Pull Image
             docker pull $DOCKER_IMAGE:$IMAGE_TAG
 
             # 2. Stop & Remove existing container

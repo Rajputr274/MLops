@@ -2,11 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy correct requirements file
+COPY req.txt .
+RUN pip install --no-cache-dir -r req.txt
 
-# Copy everything (serve.py, model.pkl / model folder, static folder, etc.)
+# Copy all code and ML artifacts
 COPY . .
 
 # FastAPI port
