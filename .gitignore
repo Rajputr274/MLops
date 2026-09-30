@@ -1,15 +1,16 @@
 dev/
 .venv/
-__pycache__
+__pycache__/
 *.pyc
 
 mlflow.db
 mlruns/
-mlartifacts/
 
 .env
-.csv
-.dist
-.vscode
+*.csv
+.dist/
+.vscode/
 .DS_Store
 
+# Explicitly track mlartifacts folder for Docker build
+!mlartifacts/
